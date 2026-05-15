@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GymRat</title>
+  <meta name="theme-color" content="#0e0e0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GymRat" />
+  <link rel="manifest" href="manifest.json" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #0e0e0f; color: #f0ede8; font-family: 'DM Sans', 'Helvetica Neue', sans-serif; -webkit-font-smoothing: antialiased; }
+    input, button { font-family: inherit; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+
+    .app { min-height: 100vh; padding-bottom: 4rem; }
+
+    /* Header */
+    .header { border-bottom: 0.5px solid rgba(255,255,255,0.08); padding: 1.25rem 1.25rem 0.875rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+    .header-left .eyebrow { font-size: 10px; letter-spacing: 0.14em; color: rgba(240,237,232,0.35); text-transform: uppercase; margin-bottom: 3px; }
+    .header-left h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: 24px; font-weight: 400; line-height: 1.1; }
+    .view-toggle { display: flex; gap: 5px; }
+    .view-btn { padding: 5px 13px; border-radius: 20px; border: 0.5px solid rgba(255,255,255,0.15); background: transparent; color: rgba(240,237,232,0.45); font-size: 12px; cursor: pointer; transition: all 0.15s; }
+    .view-btn.active { color: #fff; }
+
+    /* Days */
+    .days-row { padding: 0.875rem 1.25rem 0; display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; }
+    .days-row::-webkit-scrollbar { display: none; }
+    .day-btn { padding: 7px 14px; border-radius: 20px; white-space: nowrap; cursor: pointer; border: 0.5px solid rgba(255,255,255,0.1); background: transparent; color: rgba(240,237,232,0.45); font-size: 13px; transition: all 0.15s; }
+    .day-btn span { margin-left: 5px; font-size: 11px; opacity: 0.65; }
+
+    /* Week bar */
+    .week-bar { padding: 0.625rem 1.25rem; display: flex; align-items: center; gap: 10px; }
+    .week-bar label { font-size: 12px; color: rgba(240,237,232,0.35); }
+    .week-bar input[type=week] { background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 7px; color: #f0ede8; font-size: 12px; padding: 4px 9px; cursor: pointer; }
+    .week-bar .today-btn { background: transparent; border: 0.5px solid rgba(255,255,255,0.1); border-radius: 7px; color: rgba(240,237,232,0.4); font-size: 11px; padding: 4px 9px; cursor: pointer; }
+
+    /* Log view */
+    .log-wrap { padding: 0.5rem 1.25rem 0; }
+    .ex-card { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 0.875rem 1rem; margin-bottom: 9px; border-left-width: 2px; }
+    .ex-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 9px; }
+    .ex-name { font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+    .ex-meta { font-size: 11px; color: rgba(240,237,232,0.32); }
+    .ex-badge { border-radius: 7px; padding: 3px 9px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .ex-fields { display: flex; gap: 9px; }
+    .field-wrap { flex: 1; }
+    .field-wrap label { font-size: 10px; color: rgba(240,237,232,0.32); text-transform: uppercase; letter-spacing: 0.07em; display: block; margin-bottom: 4px; }
+    .field-wrap input { width: 100%; background: rgba(255,255,255,0.05); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 7px; color: #f0ede8; font-size: 14px; padding: 7px 10px; }
+    .field-wrap input:focus { outline: none; border-color: rgba(255,255,255,0.25); }
+
+    .save-btn { width: 100%; padding: 13px; margin-top: 6px; border: none; border-radius: 11px; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.3s; }
+
+    /* Progress view */
+    .progress-wrap { padding: 0.75rem 1.25rem 0; }
+    .section-label { font-size: 12px; color: rgba(240,237,232,0.35); margin-bottom: 8px; }
+    .ex-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+    .ex-pill { padding: 5px 11px; border-radius: 7px; font-size: 12px; cursor: pointer; border: 0.5px solid rgba(255,255,255,0.1); background: transparent; color: rgba(240,237,232,0.55); transition: all 0.15s; }
+    .chart-card { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 1rem; overflow-x: auto; margin-bottom: 10px; }
+    .stats-row { display: flex; gap: 9px; margin-bottom: 1rem; }
+    .stat-box { flex: 1; background: rgba(255,255,255,0.04); border-radius: 9px; padding: 9px 11px; text-align: center; }
+    .stat-label { font-size: 10px; color: rgba(240,237,232,0.32); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 3px; }
+    .stat-val { font-size: 15px; font-weight: 500; }
+    .empty-msg { text-align: center; padding: 3rem 1rem; color: rgba(240,237,232,0.25); font-size: 13px; }
+
+    /* History */
+    .history-card { background: rgba(255,255,255,0.03); border: 0.5px solid rgba(255,255,255,0.07); border-radius: 11px; padding: 0.875rem 1rem; margin-bottom: 9px; }
+    .history-week { font-size: 12px; font-weight: 500; margin-bottom: 9px; }
+    .history-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 0.5px solid rgba(255,255,255,0.05); }
+    .history-row:last-child { border-bottom: none; }
+    .history-row span:first-child { color: rgba(240,237,232,0.55); }
+    .history-row span:last-child { font-weight: 500; }
+
+    /* Backup bar */
+    .backup-bar { padding: 1rem 1.25rem 0; display: flex; gap: 8px; }
+    .backup-btn { flex: 1; padding: 9px; border-radius: 9px; border: 0.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: rgba(240,237,232,0.6); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; }
+    .backup-btn:hover { background: rgba(255,255,255,0.07); color: #f0ede8; }
+    .backup-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #1a1a1b; border: 0.5px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 8px 18px; font-size: 13px; color: #f0ede8; opacity: 0; transition: opacity 0.2s; pointer-events: none; white-space: nowrap; z-index: 100; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const PLAN = {
+  "Lunes": {
+    label: "Glúteo A", color: "#D4537E",
+    exercises: [
+      { id: "hip_thrust", name: "Hip thrust con barra", series: "4", reps: "8–10" },
+      { id: "sentadilla", name: "Sentadilla con barra", series: "4", reps: "6–8" },
+      { id: "prensa_pies_altos", name: "Prensa 45° pies altos", series: "3", reps: "12–15" },
+      { id: "patada_gluteo_polea", name: "Patada glúteo en polea baja", series: "3", reps: "15 c/lado" },
+      { id: "abduccion_maquina", name: "Abducción en máquina", series: "3", reps: "15–20" },
+      { id: "plancha", name: "Plancha o dead bug", series: "3", reps: "35 seg" },
+    ]
+  },
+  "Martes": {
+    label: "Hombro + Pecho", color: "#1D9E75",
+    exercises: [
+      { id: "press_militar", name: "Press militar con barra/mancuernas", series: "4", reps: "8–10" },
+      { id: "elev_laterales", name: "Elevaciones laterales mancuernas", series: "4", reps: "12–15" },
+      { id: "press_arnold", name: "Press Arnold", series: "3", reps: "10–12" },
+      { id: "face_pulls", name: "Face pulls en polea", series: "3", reps: "15" },
+      { id: "press_inclinado", name: "Press inclinado con mancuernas", series: "3", reps: "10–12" },
+      { id: "aperturas_mancuernas", name: "Aperturas con mancuernas en banco plano", series: "3", reps: "12–15" },
+    ]
+  },
+  "Miércoles": {
+    label: "Glúteo B", color: "#D4537E",
+    exercises: [
+      { id: "peso_muerto_rumano", name: "Peso muerto rumano con barra", series: "4", reps: "8–10" },
+      { id: "zancadas_bulgaras", name: "Zancadas búlgaras con mancuernas", series: "4", reps: "10–12 c/lado" },
+      { id: "hip_thrust_unilateral", name: "Hip thrust unilateral", series: "3", reps: "12–15 c/lado" },
+      { id: "curl_femoral", name: "Curl femoral tumbado (máquina)", series: "3", reps: "12–15" },
+      { id: "abduccion_inclinada", name: "Abducción con torso inclinado", series: "3", reps: "15–20" },
+      { id: "patada_lateral", name: "Patada lateral en polea baja", series: "3", reps: "15 c/lado" },
+    ]
+  },
+  "Jueves": {
+    label: "Espalda + Bíceps", color: "#1D9E75",
+    exercises: [
+      { id: "jalon_supino", name: "Jalón al pecho agarre supino estrecho", series: "4", reps: "8–10" },
+      { id: "remo_polea", name: "Remo en polea baja agarre estrecho", series: "3", reps: "10–12" },
+      { id: "pullover", name: "Pull-over en polea alta", series: "3", reps: "12–15" },
+      { id: "elev_lat_polea", name: "Elevaciones laterales en polea baja", series: "3", reps: "12 c/lado" },
+      { id: "curl_inclinado", name: "Curl bíceps en banco inclinado", series: "3", reps: "12" },
+      { id: "extension_triceps", name: "Extensión tríceps en polea con cuerda", series: "3", reps: "12–15" },
+    ]
+  }
+};
+
+const DAYS = ["Lunes", "Martes", "Miércoles", "Jueves"];
+
+let state = {
+  activeDay: "Lunes",
+  view: "log",
+  weekKey: getCurrentWeekKey(),
+  logs: {},
+  progressEx: null
+};
+
+function getCurrentWeekKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const start = new Date(year, 0, 1);
+  const week = Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
+  return `${year}-W${String(week).padStart(2, "0")}`;
+}
+
+function getWeekLabel(wk) {
+  const [year, w] = wk.split("-W");
+  return `Semana ${w}, ${year}`;
+}
+
+function loadLogs() {
+  try {
+    const s = localStorage.getItem("gymrat_logs");
+    if (s) state.logs = JSON.parse(s);
+  } catch {}
+}
+
+function saveLogs() {
+  try { localStorage.setItem("gymrat_logs", JSON.stringify(state.logs)); } catch {}
+}
+
+function getVal(exId, field) {
+  return state.logs?.[state.weekKey]?.[state.activeDay]?.[exId]?.[field] || "";
+}
+
+function setVal(exId, field, value) {
+  if (!state.logs[state.weekKey]) state.logs[state.weekKey] = {};
+  if (!state.logs[state.weekKey][state.activeDay]) state.logs[state.weekKey][state.activeDay] = {};
+  if (!state.logs[state.weekKey][state.activeDay][exId]) state.logs[state.weekKey][state.activeDay][exId] = {};
+  state.logs[state.weekKey][state.activeDay][exId][field] = value;
+  saveLogs();
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+function exportBackup() {
+  const data = JSON.stringify(state.logs, null, 2);
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `gymrat_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("✓ Backup exportado");
+}
+
+function importBackup() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        state.logs = parsed;
+        saveLogs();
+        render();
+        showToast("✓ Historial importado");
+      } catch { showToast("Error al importar el archivo"); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function getProgressData(exId) {
+  return Object.keys(state.logs).sort().map(wk => {
+    const weight = parseFloat(state.logs[wk]?.[state.activeDay]?.[exId]?.weight || 0);
+    return { week: getWeekLabel(wk), weekKey: wk, weight };
+  }).filter(d => d.weight > 0);
+}
+
+function renderChart(data, color) {
+  const chartH = 130, chartW = 360;
+  const padL = 36, padR = 12, padT = 14, padB = 28;
+  const innerW = chartW - padL - padR;
+  const innerH = chartH - padT - padB;
+  const max = Math.max(...data.map(d => d.weight));
+  const min = Math.min(...data.map(d => d.weight));
+  const range = max - min || 1;
+  const pts = data.map((d, i) => ({
+    x: padL + (data.length === 1 ? innerW / 2 : (i / (data.length - 1)) * innerW),
+    y: padT + innerH - ((d.weight - min) / range) * innerH,
+    ...d
+  }));
+  const pathD = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const gridLines = [0, 0.5, 1].map(t => {
+    const y = padT + (1 - t) * innerH;
+    const val = (min + t * range).toFixed(1);
+    return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${chartW - padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+            <text x="${padL - 4}" y="${(y + 4).toFixed(1)}" text-anchor="end" font-size="9" fill="rgba(240,237,232,0.3)">${val}</text>`;
+  }).join("");
+  const dots = pts.map(p =>
+    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${color}"/>
+     <text x="${p.x.toFixed(1)}" y="${(p.y - 8).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="${color}" font-weight="500">${p.weight}</text>`
+  ).join("");
+  const labels = pts.map(p =>
+    `<text x="${p.x.toFixed(1)}" y="${chartH - 4}" text-anchor="middle" font-size="8.5" fill="rgba(240,237,232,0.28)">${p.week.replace("Semana ", "S")}</text>`
+  ).join("");
+  const areaClose = `L ${pts[pts.length-1].x.toFixed(1)} ${(padT + innerH).toFixed(1)} L ${pts[0].x.toFixed(1)} ${(padT + innerH).toFixed(1)} Z`;
+  return `<svg viewBox="0 0 ${chartW} ${chartH}" style="width:100%;max-width:${chartW}px;display:block">
+    ${gridLines}
+    <path d="${pathD} ${areaClose}" fill="${color}18"/>
+    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${dots}${labels}
+  </svg>`;
+}
+
+function render() {
+  const day = PLAN[state.activeDay];
+  const color = day.color;
+
+  const daysHTML = DAYS.map(d => {
+    const active = d === state.activeDay;
+    const c = PLAN[d].color;
+    return `<button class="day-btn" onclick="setDay('${d}')"
+      style="${active ? `border-color:${c};background:${c}18;color:${c};font-weight:500` : ''}">
+      ${d}<span>${PLAN[d].label}</span>
+    </button>`;
+  }).join("");
+
+  let mainHTML = "";
+
+  if (state.view === "log") {
+    const cards = day.exercises.map(ex => {
+      const weight = getVal(ex.id, "weight");
+      const repsDone = getVal(ex.id, "reps_done");
+      const badgeHTML = weight
+        ? `<div class="ex-badge" style="background:${color}22;color:${color}">${weight} kg</div>` : "";
+      return `<div class="ex-card" style="border-left-color:${color}40">
+        <div class="ex-top">
+          <div>
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-meta">${ex.series} series · ${ex.reps} reps</div>
+          </div>
+          ${badgeHTML}
+        </div>
+        <div class="ex-fields">
+          <div class="field-wrap">
+            <label>Peso (kg)</label>
+            <input type="number" step="0.5" placeholder="—" value="${weight}"
+              oninput="updateVal('${ex.id}','weight',this.value)" />
+          </div>
+          <div class="field-wrap">
+            <label>Reps reales</label>
+            <input type="text" placeholder="—" value="${repsDone}"
+              oninput="updateVal('${ex.id}','reps_done',this.value)" />
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+
+    mainHTML = `<div class="log-wrap">
+      ${cards}
+      <button class="save-btn" style="background:${color}" onclick="handleSave()">Guardar entreno</button>
+      <div class="backup-bar">
+        <button class="backup-btn" onclick="exportBackup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+          Exportar backup
+        </button>
+        <button class="backup-btn" onclick="importBackup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V8m0 0l-4 4m4-4l4 4M4 4h16"/></svg>
+          Importar backup
+        </button>
+      </div>
+    </div>`;
+  }
+
+  if (state.view === "progress") {
+    const pills = day.exercises.map(ex => {
+      const active = ex.id === state.progressEx;
+      return `<button class="ex-pill" onclick="setProgressEx('${ex.id}')"
+        style="${active ? `border-color:${color};background:${color}20;color:${color}` : ''}">
+        ${ex.name.length > 26 ? ex.name.slice(0, 24) + "…" : ex.name}
+      </button>`;
+    }).join("");
+
+    let detailHTML = "";
+    if (state.progressEx) {
+      const data = getProgressData(state.progressEx);
+      const exName = day.exercises.find(e => e.id === state.progressEx)?.name;
+      if (data.length === 0) {
+        detailHTML = `<div class="empty-msg">Sin datos todavía — registra pesos en Registro</div>`;
+      } else {
+        const chartHTML = renderChart(data, color);
+        const statsHTML = data.length > 1 ? `<div class="stats-row">
+          <div class="stat-box"><div class="stat-label">Inicio</div><div class="stat-val">${data[0].weight} kg</div></div>
+          <div class="stat-box"><div class="stat-label">Ahora</div><div class="stat-val">${data[data.length-1].weight} kg</div></div>
+          <div class="stat-box"><div class="stat-label">Progreso</div><div class="stat-val" style="color:${color}">+${(data[data.length-1].weight - data[0].weight).toFixed(1)} kg</div></div>
+        </div>` : "";
+        detailHTML = `<div style="font-size:13px;font-weight:500;margin-bottom:10px">${exName}</div>
+          <div class="chart-card">${chartHTML}</div>${statsHTML}`;
+      }
+    } else {
+      const weeks = Object.keys(state.logs).sort().reverse();
+      const histHTML = weeks.length === 0
+        ? `<div class="empty-msg">Sin registros todavía</div>`
+        : weeks.map(wk => {
+            const dayData = state.logs[wk]?.[state.activeDay];
+            if (!dayData) return "";
+            const rows = day.exercises.map(ex => {
+              const w = dayData[ex.id]?.weight;
+              if (!w) return "";
+              return `<div class="history-row"><span>${ex.name}</span><span>${w} kg</span></div>`;
+            }).join("");
+            if (!rows) return "";
+            return `<div class="history-card">
+              <div class="history-week" style="color:${color}">${getWeekLabel(wk)}</div>
+              ${rows}
+            </div>`;
+          }).join("");
+      detailHTML = `<div class="section-label">Historial de ${state.activeDay}:</div>${histHTML}`;
+    }
+
+    mainHTML = `<div class="progress-wrap">
+      <div class="section-label">Selecciona un ejercicio:</div>
+      <div class="ex-pills">${pills}</div>
+      ${detailHTML}
+      <div class="backup-bar">
+        <button class="backup-btn" onclick="exportBackup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16"/></svg>
+          Exportar backup
+        </button>
+        <button class="backup-btn" onclick="importBackup()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V8m0 0l-4 4m4-4l4 4M4 4h16"/></svg>
+          Importar backup
+        </button>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById("app").innerHTML = `
+    <div class="header">
+      <div class="header-left">
+        <div class="eyebrow">GymRat</div>
+        <h1>Tu rutina</h1>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn ${state.view === 'log' ? 'active' : ''}"
+          style="${state.view === 'log' ? `background:${color};border-color:${color}` : ''}"
+          onclick="setView('log')">Registro</button>
+        <button class="view-btn ${state.view === 'progress' ? 'active' : ''}"
+          style="${state.view === 'progress' ? `background:${color};border-color:${color}` : ''}"
+          onclick="setView('progress')">Progreso</button>
+      </div>
+    </div>
+    <div class="days-row">${daysHTML}</div>
+    <div class="week-bar">
+      <label>Semana:</label>
+      <input type="week" value="${state.weekKey}" onchange="setWeek(this.value)" />
+      <button class="today-btn" onclick="setWeek(getCurrentWeekKey())">Esta semana</button>
+    </div>
+    ${mainHTML}
+  `;
+}
+
+function setDay(d) { state.activeDay = d; state.progressEx = null; render(); }
+function setView(v) { state.view = v; state.progressEx = null; render(); }
+function setWeek(w) { state.weekKey = w; render(); }
+function setProgressEx(id) { state.progressEx = state.progressEx === id ? null : id; render(); }
+function updateVal(exId, field, value) { setVal(exId, field, value); render(); }
+function handleSave() { showToast("✓ Entreno guardado"); }
+
+loadLogs();
+render();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
